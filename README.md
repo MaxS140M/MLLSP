@@ -1,6 +1,8 @@
 # MLLSP
 Machine Learning Live Stocks Prediction
 
+![demo](docs\assets\showcase.png)
+
 ## Technology stack
 
 - **Backend:** Python, FastAPI, Uvicorn
