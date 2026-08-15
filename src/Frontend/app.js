@@ -21,6 +21,14 @@ const elements = {
   pointCount: document.querySelector("#point-count"),
   chart: document.querySelector("#price-chart"),
   emptyChart: document.querySelector("#empty-chart"),
+  runAnalysis: document.querySelector("#run-analysis"),
+  analysisLoading: document.querySelector("#analysis-loading"),
+  analysisError: document.querySelector("#analysis-error"),
+  notebookContainer: document.querySelector("#notebook-container"),
+  analysisSymbol: document.querySelector("#analysis-symbol"),
+  customSymbol: document.querySelector("#custom-symbol"),
+  addSymbol: document.querySelector("#add-symbol"),
+  addSymbolStatus: document.querySelector("#add-symbol-status"),
 };
 
 async function getJson(path) {
@@ -115,8 +123,87 @@ async function checkApi() {
   }
 }
 
+async function runNotebookAnalysis() {
+  const symbol = elements.symbol.value;
+  elements.analysisSymbol.textContent = symbol;
+  elements.analysisLoading.hidden = false;
+  elements.analysisError.hidden = true;
+  elements.notebookContainer.hidden = true;
+  elements.runAnalysis.disabled = true;
+
+  // Show elapsed time so the user knows work is in progress.
+  let seconds = 0;
+  const timer = setInterval(() => {
+    seconds++;
+    elements.analysisSymbol.textContent = `${symbol} (${seconds}s)`;
+  }, 1000);
+
+  // Hard 3-minute timeout — notebooks with errors can hang indefinitely.
+  const controller = new AbortController();
+  const hardTimeout = setTimeout(() => controller.abort(), 180_000);
+
+  try {
+    const response = await fetch(`${API_BASE}/analyze/${symbol}`, { signal: controller.signal });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.detail || `Request failed (${response.status})`);
+
+    if (!result.success) throw new Error(result.error || "Analysis failed");
+
+    if (result.html) {
+      elements.notebookContainer.innerHTML = result.html;
+      elements.notebookContainer.hidden = false;
+    }
+  } catch (error) {
+    const msg = error.name === "AbortError" ? "Analysis timed out after 3 minutes" : error.message;
+    elements.analysisError.textContent = `Analysis failed: ${msg}`;
+    elements.analysisError.hidden = false;
+  } finally {
+    clearInterval(timer);
+    clearTimeout(hardTimeout);
+    elements.analysisLoading.hidden = true;
+    elements.runAnalysis.disabled = false;
+  }
+}
+
+async function addNewSymbol() {
+  const sym = elements.customSymbol.value.trim().toUpperCase();
+  if (!sym) return;
+
+  elements.addSymbol.disabled = true;
+  elements.addSymbolStatus.textContent = `Fetching data for ${sym}...`;
+  elements.addSymbolStatus.style.color = "var(--muted)";
+
+  try {
+    const result = await fetch(`${API_BASE}/setup/${sym}`, { method: "POST" });
+    const data = await result.json();
+    if (!result.ok) throw new Error(data.detail || `Request failed (${result.status})`);
+
+    // Add to dropdown if not already present.
+    if (![...elements.symbol.options].some((o) => o.value === sym)) {
+      const option = document.createElement("option");
+      option.value = sym;
+      option.textContent = sym;
+      elements.symbol.appendChild(option);
+    }
+    elements.symbol.value = sym;
+    elements.customSymbol.value = "";
+    elements.addSymbolStatus.textContent =
+      `${sym} ready — ${data.observations} bars, model: ${data.best_model}, predicted close: ${formatPrice(data.predicted_price)}`;
+    elements.addSymbolStatus.style.color = "var(--teal)";
+    loadDashboard();
+  } catch (err) {
+    elements.addSymbolStatus.textContent = `Failed: ${err.message}`;
+    elements.addSymbolStatus.style.color = "var(--coral)";
+  } finally {
+    elements.addSymbol.disabled = false;
+  }
+}
+
 // Load the first symbol and wire up user actions.
 elements.refresh.addEventListener("click", loadDashboard);
 elements.symbol.addEventListener("change", loadDashboard);
+elements.runAnalysis.addEventListener("click", runNotebookAnalysis);
+elements.addSymbol.addEventListener("click", addNewSymbol);
+elements.customSymbol.addEventListener("keydown", (e) => { if (e.key === "Enter") addNewSymbol(); });
 checkApi();
 loadDashboard();

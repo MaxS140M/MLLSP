@@ -9,15 +9,15 @@
 	<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 	<!-- Load the chart library before the dashboard script. -->
 	<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-	<link rel="stylesheet" href="styles.css">
+	<link rel="stylesheet" href="styles.css?v=3">
 </head>
 <body>
 	<main class="shell">
 		<!-- Brand and API connection status. -->
 		<header class="topbar">
 			<div>
-				<p class="eyebrow">MLLSP / LIVE MARKET MONITOR</p>
-				<h1>Signal, with context.</h1>
+				<p class="eyebrow">MLLSP / Machine Learning Live Stocks Prediction</p>
+				<h1>Max Sloam Personal Project.</h1>
 			</div>
 			<div class="connection"><span id="status-dot"></span><span id="api-status">Checking API</span></div>
 		</header>
@@ -28,9 +28,19 @@
 			<select id="symbol">
 				<option value="AAPL">AAPL</option>
 				<option value="MSFT">MSFT</option>
+				<option value="GOOGL">GOOGL</option>
+				<option value="NVDA">NVDA</option>
 			</select>
 			<button id="refresh" type="button">Refresh data</button>
 			<span id="updated" class="mono">Not loaded</span>
+		</section>
+
+		<!-- Add a new symbol: fetch data, train model, load dashboard. -->
+		<section class="add-symbol-bar" aria-label="Add symbol">
+			<label for="custom-symbol">Add symbol</label>
+			<input id="custom-symbol" type="text" placeholder="e.g. TSLA" maxlength="10" autocomplete="off" spellcheck="false">
+			<button id="add-symbol" type="button">Fetch &amp; train</button>
+			<span id="add-symbol-status" class="mono"></span>
 		</section>
 
 		<div id="error" class="notice error" role="alert" hidden></div>
@@ -55,6 +65,22 @@
 		<section class="chart-section" aria-label="Price history">
 			<div class="section-heading"><div><p class="eyebrow">PRICE HISTORY</p><h2>Stored closing prices</h2></div><span class="mono" id="point-count">-- points</span></div>
 			<div class="chart-wrap"><canvas id="price-chart" aria-label="Historical closing price chart"></canvas><div id="empty-chart" class="empty" hidden>No historical observations are available for this symbol.</div></div>
+		</section>
+
+		<!-- Notebook analysis section. -->
+		<section class="analysis-section" aria-label="Detailed analysis">
+			<div class="section-heading">
+				<div>
+					<p class="eyebrow">DETAILED ANALYSIS</p>
+					<h2>Run Jupyter notebook analysis</h2>
+				</div>
+				<button id="run-analysis" type="button">Run Analysis</button>
+			</div>
+			<div id="analysis-loading" class="notice" hidden>Running analysis for <span id="analysis-symbol"></span>...</div>
+			<div id="analysis-error" class="notice error" role="alert" hidden></div>
+			<div id="notebook-container" class="notebook-output" hidden>
+				<!-- Notebook HTML will be inserted here -->
+			</div>
 		</section>
 
 		<footer><span>Experimental model output</span><span class="mono">Twelve Data · SQLite · FastAPI</span></footer>

@@ -1,6 +1,7 @@
 """FastAPI routes for quotes and saved model predictions."""
 
 import json
+from contextlib import asynccontextmanager
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
@@ -13,20 +14,30 @@ from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..db import get_db
+from ..db import get_db, init_db
+from ..ingestion.service import ingest_historical_prices
+from ..training.train import train_symbol
 from ..db.models import MarketObservation, Symbol
 from ..features import FEATURE_COLUMNS, build_feature_frame
 from ..ingestion import TwelveDataClient, TwelveDataError, ingest_live_quote
+from .notebook_executor import execute_notebook
 
 MODEL_DIR = Path(__file__).resolve().parents[1] / "training" / "models"
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    yield
+
+
 # Create the API app and allow the local frontend to call it.
-app = FastAPI(title="MLLSP Prediction API", version="0.4.0")
+app = FastAPI(title="MLLSP Prediction API", version="0.4.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=False,
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
@@ -61,12 +72,71 @@ class HistoryPoint(BaseModel):
     close: Decimal
 
 
+class SetupResponse(BaseModel):
+    symbol: str
+    observations: int
+    best_model: str
+    predicted_price: float
+    current_price: Decimal
+
+
+class NotebookResponse(BaseModel):
+    success: bool
+    symbol: str
+    html: str | None
+    cells_output: dict | None
+    error: str | None
+
+
 @app.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
     """Confirm that the API process is running."""
 
     # Return a lightweight server health signal.
     return HealthResponse(status="ok")
+
+
+@app.post("/setup/{symbol}", response_model=SetupResponse)
+def setup(symbol: str, db: DatabaseSession) -> SetupResponse:
+    """Fetch historical data and train a model for a new symbol."""
+
+    ticker = _normalize_symbol(symbol)
+    client = TwelveDataClient()
+    try:
+        observations = ingest_historical_prices(db, client, ticker, outputsize=200)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except TwelveDataError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    try:
+        result = train_symbol(db, ticker)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    # Return the latest close as the current price for immediate display.
+    symbol_record = db.scalar(select(Symbol).where(Symbol.ticker == ticker))
+    observations_list = db.scalars(
+        select(MarketObservation)
+        .where(MarketObservation.symbol_id == symbol_record.id)
+        .order_by(MarketObservation.timestamp)
+    ).all()
+    latest = observations_list[-1]
+
+    # Run the freshly trained model to get the actual next-close prediction.
+    metadata = _load_metadata(ticker)
+    model = _load_model(metadata)
+    feature_frame = build_feature_frame(observations_list, include_target=False)
+    features = feature_frame[metadata.get("feature_columns", FEATURE_COLUMNS)].tail(1)
+    predicted_price = float(model.predict(features)[0])
+
+    return SetupResponse(
+        symbol=ticker,
+        observations=observations,
+        best_model=result.best_model,
+        predicted_price=predicted_price,
+        current_price=latest.close,
+    )
 
 
 @app.get("/quote/{symbol}", response_model=QuoteResponse)
@@ -151,6 +221,35 @@ def history(symbol: str, db: DatabaseSession) -> list[HistoryPoint]:
         HistoryPoint(timestamp=observation.timestamp, close=observation.close)
         for observation in observations
     ]
+
+
+@app.get("/analyze/{symbol}", response_model=NotebookResponse)
+def analyze(symbol: str) -> NotebookResponse:
+    """Execute the analysis notebook with a custom SYMBOL parameter."""
+
+    ticker = _normalize_symbol(symbol)
+    notebook_path = Path(__file__).resolve().parents[3] / "docs" / "notebooks" / "MLLSP.ipynb"
+    
+    if not notebook_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail=f"Notebook not found at {notebook_path}",
+        )
+    
+    result = execute_notebook(notebook_path, ticker)
+    if not result["success"]:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Notebook execution failed: {result['error']}",
+        )
+    
+    return NotebookResponse(
+        success=result["success"],
+        symbol=ticker,
+        html=result["html"],
+        cells_output=result["cells_output"],
+        error=result["error"],
+    )
 
 
 def _normalize_symbol(symbol: str) -> str:
