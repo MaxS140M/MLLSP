@@ -21,10 +21,25 @@ Machine Learning Live Stocks Prediction
 - [Milestone 3 test notes](docs/Tests/testM3.md)
 - [Milestone 3 analysis notebook](docs/notebooks/MLLSP.ipynb)
 
-After historical data has been imported, Milestone 3 training can be run with `train_symbol`. See the [Milestone 3 test notes](docs/Tests/testM3.md) for the command and results.
+## Workflow 
 
+Twelve Data API
+    ↓
+ingest_historical_prices("MSFT")
+    ↓
+mllsp.db
+    ↓
+MLLSP.ipynb reads MSFT data
+    ↓
+features are created
+    ↓
+models are trained and evaluated
+    ↓
+model files and metadata are saved
+    ↓
+frontend not added yet.
+    ↓
 
+    ↓
 
-
-
-
+    ↓
