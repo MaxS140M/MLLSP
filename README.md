@@ -1,7 +1,7 @@
 # MLLSP
 Machine Learning Live Stocks Prediction
 
-![demo](docs\assets\showcase.png)
+![demo](docs/assets/showcase.png)
 
 ## Technology stack
 
