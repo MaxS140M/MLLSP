@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>MLLSP Market Monitor</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+	<!-- Load the chart library before the dashboard script. -->
+	<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+	<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+	<main class="shell">
+		<!-- Brand and API connection status. -->
+		<header class="topbar">
+			<div>
+				<p class="eyebrow">MLLSP / LIVE MARKET MONITOR</p>
+				<h1>Signal, with context.</h1>
+			</div>
+			<div class="connection"><span id="status-dot"></span><span id="api-status">Checking API</span></div>
+		</header>
+
+		<!-- Symbol selection and refresh controls. -->
+		<section class="controls" aria-label="Market controls">
+			<label for="symbol">Symbol</label>
+			<select id="symbol">
+				<option value="AAPL">AAPL</option>
+				<option value="MSFT">MSFT</option>
+			</select>
+			<button id="refresh" type="button">Refresh data</button>
+			<span id="updated" class="mono">Not loaded</span>
+		</section>
+
+		<div id="error" class="notice error" role="alert" hidden></div>
+		<div id="loading" class="notice" hidden>Loading market data...</div>
+
+		<!-- Current quote and prediction summary. -->
+		<section class="hero-grid" aria-label="Current market summary">
+			<article class="quote-panel">
+				<p class="eyebrow">CURRENT QUOTE</p>
+				<div class="symbol-line"><span id="company">--</span><span id="ticker">--</span></div>
+				<p id="price" class="price">--</p>
+				<p id="quote-time" class="muted">Waiting for quote</p>
+			</article>
+			<article class="prediction-panel">
+				<div class="panel-heading"><p class="eyebrow">NEXT CLOSE ESTIMATE</p><span class="badge" id="model">--</span></div>
+				<p id="prediction" class="prediction">--</p>
+				<div class="prediction-meta"><span>Current</span><strong id="prediction-current">--</strong><span>Horizon</span><strong id="horizon">--</strong></div>
+			</article>
+		</section>
+
+		<!-- Historical closing-price chart. -->
+		<section class="chart-section" aria-label="Price history">
+			<div class="section-heading"><div><p class="eyebrow">PRICE HISTORY</p><h2>Stored closing prices</h2></div><span class="mono" id="point-count">-- points</span></div>
+			<div class="chart-wrap"><canvas id="price-chart" aria-label="Historical closing price chart"></canvas><div id="empty-chart" class="empty" hidden>No historical observations are available for this symbol.</div></div>
+		</section>
+
+		<footer><span>Experimental model output</span><span class="mono">Twelve Data · SQLite · FastAPI</span></footer>
+	</main>
+	<script src="app.js"></script>
+</body>
+</html>

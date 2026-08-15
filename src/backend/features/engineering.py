@@ -24,6 +24,7 @@ def build_feature_frame(
     if horizon < 1:
         raise ValueError("horizon must be at least 1")
 
+    # Normalize input records into a sorted numeric frame.
     frame = _to_frame(data)
     missing = REQUIRED_COLUMNS.difference(frame.columns)
     if missing:
@@ -34,17 +35,20 @@ def build_feature_frame(
     if frame["close"].isna().all():
         raise ValueError("close must contain at least one numeric value")
 
+    # Build lag, return, and rolling-volatility inputs.
     frame["return_1"] = frame["close"].pct_change()
     frame["close_lag_1"] = frame["close"].shift(1)
     frame["close_lag_5"] = frame["close"].shift(5)
     frame["volatility_5"] = frame["return_1"].rolling(window=5).std()
 
+    # Add the future close only when preparing training data.
     if include_target:
         frame[TARGET_COLUMN] = frame["close"].shift(-horizon)
 
     columns = ["timestamp", *FEATURE_COLUMNS]
     if include_target:
         columns.append(TARGET_COLUMN)
+    # Remove rows that cannot produce complete features.
     return frame.dropna(subset=columns).loc[:, columns]
 
 

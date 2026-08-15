@@ -1,0 +1,51 @@
+:root {
+  --ink: #17252b;
+  --muted: #66767b;
+  --paper: #f3f1ea;
+  --panel: #fffdf8;
+  --line: #d9ded8;
+  --teal: #147d79;
+  --coral: #dc6d4d;
+  --shadow: 0 18px 50px rgba(25, 47, 48, .08);
+}
+
+/* Use a warm paper surface with teal and coral signals. */
+* { box-sizing: border-box; }
+body { margin: 0; color: var(--ink); background: radial-gradient(circle at 85% 4%, #d9ebe4 0, transparent 28%), var(--paper); font-family: "Space Grotesk", sans-serif; }
+.shell { width: min(1180px, calc(100% - 40px)); margin: 0 auto; padding: 42px 0 28px; }
+.topbar, .controls, .section-heading, .panel-heading, footer { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.topbar { border-bottom: 1px solid var(--line); padding-bottom: 32px; }
+h1 { margin: 8px 0 0; max-width: 560px; font-size: clamp(2.2rem, 5vw, 4.8rem); line-height: .98; letter-spacing: -.045em; }
+h2 { margin: 6px 0 0; font-size: 1.35rem; letter-spacing: -.02em; }
+.eyebrow { margin: 0; color: var(--teal); font-family: "DM Mono", monospace; font-size: .72rem; letter-spacing: .08em; }
+.connection { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: .85rem; }
+#status-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--coral); }
+#status-dot.online { background: var(--teal); }
+/* Keep controls compact and usable on small screens. */
+.controls { justify-content: flex-start; flex-wrap: wrap; padding: 24px 0; }
+label { color: var(--muted); font-size: .85rem; }
+select, button { border: 1px solid var(--line); border-radius: 3px; padding: 11px 14px; color: var(--ink); background: var(--panel); font: inherit; }
+button { border-color: var(--teal); color: white; background: var(--teal); cursor: pointer; }
+button:hover { background: #0e6865; }
+.mono { font-family: "DM Mono", monospace; font-size: .74rem; color: var(--muted); }
+.notice { margin: 0 0 18px; padding: 13px 16px; border: 1px solid var(--line); background: rgba(255, 253, 248, .7); color: var(--muted); }
+.error { border-color: #e5a18d; color: #9c412d; background: #fff4ef; }
+/* Give the quote more room than the prediction summary. */
+.hero-grid { display: grid; grid-template-columns: 1.25fr .75fr; gap: 16px; }
+.quote-panel, .prediction-panel, .chart-section { border: 1px solid var(--line); background: var(--panel); box-shadow: var(--shadow); }
+.quote-panel, .prediction-panel { min-height: 260px; padding: 28px; }
+.symbol-line { display: flex; align-items: baseline; gap: 12px; margin-top: 34px; }
+#company { font-size: 1.35rem; font-weight: 600; }
+#ticker { color: var(--muted); font-family: "DM Mono", monospace; font-size: .9rem; }
+.price, .prediction { margin: 18px 0 8px; font-size: clamp(2.6rem, 7vw, 5.5rem); line-height: 1; letter-spacing: -.06em; }
+.prediction { color: var(--coral); }
+.muted { color: var(--muted); font-size: .85rem; }
+.badge { padding: 5px 8px; border: 1px solid #efc8bb; color: var(--coral); font-family: "DM Mono", monospace; font-size: .68rem; }
+.prediction-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 20px; margin-top: 42px; color: var(--muted); font-size: .8rem; }
+.prediction-meta strong { color: var(--ink); font-family: "DM Mono", monospace; font-size: .82rem; }
+/* Reserve a stable area for the responsive chart. */
+.chart-section { margin-top: 16px; padding: 28px; }
+.chart-wrap { position: relative; height: 360px; margin-top: 26px; }
+.empty { display: grid; height: 100%; place-items: center; color: var(--muted); }
+footer { margin-top: 30px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: .78rem; }
+@media (max-width: 720px) { .shell { width: min(100% - 24px, 560px); padding-top: 24px; } .topbar { align-items: flex-start; flex-direction: column; } .hero-grid { grid-template-columns: 1fr; } .quote-panel, .prediction-panel, .chart-section { padding: 20px; } .chart-wrap { height: 280px; } footer { align-items: flex-start; flex-direction: column; } }

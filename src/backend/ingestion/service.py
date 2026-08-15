@@ -26,6 +26,7 @@ def ingest_historical_prices(
     if not ticker:
         raise ValueError("symbol must not be empty")
 
+    # Fetch the source data before opening the write path.
     bars = client.get_time_series(ticker, interval=interval, outputsize=outputsize)
     symbol_record = db.scalar(select(Symbol).where(Symbol.ticker == ticker))
     if symbol_record is None:
@@ -33,6 +34,7 @@ def ingest_historical_prices(
         db.add(symbol_record)
         db.flush()
 
+    # Upsert each bar so repeated imports stay safe.
     written = 0
     for bar in bars:
         timestamp = _database_timestamp(bar.timestamp)
@@ -67,6 +69,7 @@ def ingest_live_quote(
     if not ticker:
         raise ValueError("symbol must not be empty")
 
+    # Fetch the latest quote and attach its company name.
     quote = client.get_quote(ticker)
     timestamp = _database_timestamp(quote.timestamp or datetime.now(timezone.utc))
     symbol_record = db.scalar(select(Symbol).where(Symbol.ticker == ticker))
@@ -77,6 +80,7 @@ def ingest_live_quote(
     if quote.name:
         symbol_record.name = quote.name
 
+    # Store the quote as a point-in-time price observation.
     observation = db.scalar(
         select(MarketObservation).where(
             MarketObservation.symbol_id == symbol_record.id,

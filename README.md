@@ -19,38 +19,26 @@ Machine Learning Live Stocks Prediction
 - [Milestone 1 test notes](docs/Tests/testM1.md)
 - [Milestone 2 test notes](docs/Tests/testM2.md)
 - [Milestone 3 test notes](docs/Tests/testM3.md)
+- [Milestone 4 test notes](docs/Tests/testM4.md)
+- [Milestone 5 test notes](docs/Tests/testM5.md)
 - [Milestone 3 analysis notebook](docs/notebooks/MLLSP.ipynb)
 
+
 ## Workflow 
+How it works: 
 
+Using the Twelve data API we use a request to ingest past closing prices of a companies stock. 
+[ingestion](src\backend\ingestion)
 
-Twelve Data API
+These can then be saved to the database
+[database](mllsp.db)
 
-↓
-
-ingest_historical_prices("MSFT")
-
-↓
-
-mllsp.db
-
-↓
-
-MLLSP.ipynb reads MSFT data
+We can then use are jupiter notebook to visualise and train the data to predict the next closing price the next day. Features are created and
+Models are trained and evaluated
+[notebook](docs\notebooks\MLLSP.ipynb)
     
-↓
+Model files and metadata are saved
+[Model](src\backend\training\models)  
 
-features are created
-    
-↓
-
-models are trained and evaluated
-    
-↓
-
-model files and metadata are saved
-    
-↓
-
-frontend not added yet.
-
+These can then be viewed using an api request in the frontend. 
+[frontend](src\Frontend)
