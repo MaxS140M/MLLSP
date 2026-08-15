@@ -53,3 +53,13 @@ python -c "from src.backend.db import SessionLocal, init_db; from src.backend.in
 ```
 
 The local `.env` file, database, and generated model files are ignored by Git. Never commit API keys.
+
+## Run the prediction API
+
+Start the FastAPI server from the repository root:
+
+```powershell
+uvicorn src.backend.api.main:app --reload
+```
+
+Open the interactive API documentation at `http://127.0.0.1:8000/docs`.

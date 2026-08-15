@@ -19,6 +19,7 @@ Machine Learning Live Stocks Prediction
 - [Milestone 1 test notes](docs/Tests/testM1.md)
 - [Milestone 2 test notes](docs/Tests/testM2.md)
 - [Milestone 3 test notes](docs/Tests/testM3.md)
+- [Milestone 4 test notes](docs/Tests/testM4.md)
 - [Milestone 3 analysis notebook](docs/notebooks/MLLSP.ipynb)
 
 ## Workflow 
