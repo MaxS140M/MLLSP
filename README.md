@@ -23,23 +23,34 @@ Machine Learning Live Stocks Prediction
 
 ## Workflow 
 
+
 Twelve Data API
-    ↓
+
+↓
+
 ingest_historical_prices("MSFT")
-    ↓
+
+↓
+
 mllsp.db
-    ↓
+
+↓
+
 MLLSP.ipynb reads MSFT data
-    ↓
+    
+↓
+
 features are created
-    ↓
+    
+↓
+
 models are trained and evaluated
-    ↓
+    
+↓
+
 model files and metadata are saved
-    ↓
+    
+↓
+
 frontend not added yet.
-    ↓
 
-    ↓
-
-    ↓
