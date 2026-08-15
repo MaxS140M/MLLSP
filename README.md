@@ -24,4 +24,10 @@ Machine Learning Live Stocks Prediction
 	python -c "from src.backend.db import init_db; init_db()"
 	```
 
+5. Import 30 days of daily prices for a symbol:
+
+	```bash
+	python -c "from src.backend.db import SessionLocal, init_db; from src.backend.ingestion import TwelveDataClient, ingest_historical_prices; init_db(); db=SessionLocal(); print('Records written:', ingest_historical_prices(db, TwelveDataClient(), 'AAPL')); db.close()"
+	```
+
 The `.env` file and local database are ignored by Git. Never commit API keys or generated model files.
