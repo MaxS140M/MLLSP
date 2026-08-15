@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..db.models import MarketObservation, Symbol
-from .client import PriceBar, TwelveDataClient
+from .client import PriceBar, Quote, TwelveDataClient
 
 
 def ingest_historical_prices(
@@ -54,6 +54,47 @@ def ingest_historical_prices(
 
     db.commit()
     return written
+
+
+def ingest_live_quote(
+    db: Session,
+    client: TwelveDataClient,
+    symbol: str,
+) -> Quote:
+    """Fetch a live quote and save it as the latest market observation."""
+
+    ticker = symbol.strip().upper()
+    if not ticker:
+        raise ValueError("symbol must not be empty")
+
+    quote = client.get_quote(ticker)
+    timestamp = _database_timestamp(quote.timestamp or datetime.now(timezone.utc))
+    symbol_record = db.scalar(select(Symbol).where(Symbol.ticker == ticker))
+    if symbol_record is None:
+        symbol_record = Symbol(ticker=ticker)
+        db.add(symbol_record)
+        db.flush()
+
+    observation = db.scalar(
+        select(MarketObservation).where(
+            MarketObservation.symbol_id == symbol_record.id,
+            MarketObservation.timestamp == timestamp,
+        )
+    )
+    if observation is None:
+        observation = MarketObservation(
+            symbol_id=symbol_record.id,
+            timestamp=timestamp,
+        )
+        db.add(observation)
+
+    observation.open = quote.price
+    observation.high = quote.price
+    observation.low = quote.price
+    observation.close = quote.price
+    observation.volume = None
+    db.commit()
+    return quote
 
 
 def _update_observation(observation: MarketObservation, bar: PriceBar) -> None:

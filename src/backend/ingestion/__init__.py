@@ -8,7 +8,7 @@ from .client import (
 	TwelveDataRequestError,
 	TwelveDataResponseError,
 )
-from .service import ingest_historical_prices
+from .service import ingest_historical_prices, ingest_live_quote
 
 __all__ = [
 	"PriceBar",
@@ -18,4 +18,5 @@ __all__ = [
 	"TwelveDataRequestError",
 	"TwelveDataResponseError",
 	"ingest_historical_prices",
+	"ingest_live_quote",
 ]

@@ -1,33 +1,26 @@
 # MLLSP
 Machine Learning Live Stocks Prediction
 
-## Backend setup
+## Technology stack
 
-1. Create and activate a virtual environment from the repository root:
+- **Backend:** Python, FastAPI, Uvicorn
+- **Database:** SQLite with SQLAlchemy
+- **Data processing:** pandas and NumPy
+- **Machine learning:** scikit-learn and joblib
+- **Market data:** Twelve Data API
+- **Frontend:** Static HTML and JavaScript
 
-	```bash
-	python -m venv .venv
-	.venv\Scripts\activate
-	```
+## Documentation
 
-2. Install the backend dependencies:
+- [Setup guide](docs/setup.md)
+- [Project outline](docs/project_outline.md)
+- [Project structure](docs/project_structure.md)
+- [Milestones](docs/milestones.md)
+- [Milestone 1 test notes](docs/Tests/testM1.md)
+- [Milestone 2 test notes](docs/Tests/testM2.md)
 
-	```bash
-	pip install -r src/backend/requirements.txt
-	```
 
-3. Copy `src/backend/.env.example` to `src/backend/.env` and set `TWELVE_DATA_API_KEY` to your Twelve Data API key. The default database is SQLite at `mllsp.db`; change `DATABASE_URL` if needed. The ingestion client validates quote and time-series responses and raises clear errors for provider failures or malformed data.
 
-4. Initialize the database tables:
 
-	```bash
-	python -c "from src.backend.db import init_db; init_db()"
-	```
 
-5. Import 30 days of daily prices for a symbol:
 
-	```bash
-	python -c "from src.backend.db import SessionLocal, init_db; from src.backend.ingestion import TwelveDataClient, ingest_historical_prices; init_db(); db=SessionLocal(); print('Records written:', ingest_historical_prices(db, TwelveDataClient(), 'AAPL')); db.close()"
-	```
-
-The `.env` file and local database are ignored by Git. Never commit API keys or generated model files.
