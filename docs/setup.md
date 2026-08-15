@@ -30,7 +30,7 @@ Copy-Item src/backend/.env.example src/backend/.env
 
 Set `TWELVE_DATA_API_KEY` in `src/backend/.env`. The default database is SQLite at `mllsp.db`; set `DATABASE_URL` if a different database is needed.
 
-The ingestion client validates quote and time-series responses and reports provider or malformed-data errors clearly.
+The ingestion client validates quote and time-series responses, retries temporary rate-limit responses with backoff, and reports provider or malformed-data errors clearly.
 
 ## Initialize the database
 

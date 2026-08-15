@@ -1,6 +1,7 @@
 """Validated client for the Twelve Data REST API."""
 
 import os
+import time
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
@@ -19,6 +20,10 @@ class TwelveDataError(RuntimeError):
 
 class TwelveDataRequestError(TwelveDataError):
     """Raised when a request cannot be completed successfully."""
+
+
+class TwelveDataRateLimitError(TwelveDataRequestError):
+    """Raised when the Twelve Data request limit is exhausted."""
 
 
 class TwelveDataResponseError(TwelveDataError):
@@ -55,6 +60,8 @@ class TwelveDataClient:
         base_url: str | None = None,
         timeout: float = 10.0,
         session: requests.Session | None = None,
+        max_retries: int = 2,
+        backoff_factor: float = 1.0,
     ) -> None:
         self.api_key = api_key or os.getenv("TWELVE_DATA_API_KEY")
         if not self.api_key or self.api_key == "your_twelve_data_api_key":
@@ -63,6 +70,12 @@ class TwelveDataClient:
         self.base_url = (base_url or "https://api.twelvedata.com").rstrip("/")
         self.timeout = timeout
         self.session = session or requests.Session()
+        if max_retries < 0:
+            raise ValueError("max_retries must not be negative")
+        if backoff_factor < 0:
+            raise ValueError("backoff_factor must not be negative")
+        self.max_retries = max_retries
+        self.backoff_factor = backoff_factor
 
     def get_quote(self, symbol: str) -> Quote:
         """Fetch and validate the latest quote for a symbol."""
@@ -105,23 +118,65 @@ class TwelveDataClient:
 
     def _request(self, path: str, params: dict[str, Any]) -> dict[str, Any]:
         params["apikey"] = self.api_key
-        try:
-            response = self.session.get(
-                f"{self.base_url}{path}", params=params, timeout=self.timeout
-            )
-            response.raise_for_status()
-            payload = response.json()
-        except requests.RequestException as exc:
-            raise TwelveDataRequestError(f"Twelve Data request failed: {exc}") from exc
-        except ValueError as exc:
-            raise TwelveDataResponseError("Twelve Data returned invalid JSON") from exc
+        for attempt in range(self.max_retries + 1):
+            try:
+                response = self.session.get(
+                    f"{self.base_url}{path}", params=params, timeout=self.timeout
+                )
+                if response.status_code == 429:
+                    if attempt < self.max_retries:
+                        self._sleep_before_retry(response, attempt)
+                        continue
+                    raise TwelveDataRateLimitError(
+                        "Twelve Data rate limit reached after retries"
+                    )
 
-        if not isinstance(payload, dict):
-            raise TwelveDataResponseError("Twelve Data response must be a JSON object")
-        return payload
+                response.raise_for_status()
+                payload = response.json()
+            except TwelveDataRateLimitError:
+                raise
+            except requests.Timeout as exc:
+                raise TwelveDataRequestError(
+                    f"Twelve Data request timed out after {self.timeout} seconds"
+                ) from exc
+            except requests.RequestException as exc:
+                raise TwelveDataRequestError(f"Twelve Data request failed: {exc}") from exc
+            except ValueError as exc:
+                raise TwelveDataResponseError("Twelve Data returned invalid JSON") from exc
+
+            if not isinstance(payload, dict):
+                raise TwelveDataResponseError("Twelve Data response must be a JSON object")
+            if self._is_rate_limited(payload):
+                if attempt < self.max_retries:
+                    self._sleep_before_retry(response, attempt)
+                    continue
+                raise TwelveDataRateLimitError(
+                    str(payload.get("message", "Twelve Data rate limit reached"))
+                )
+            return payload
+
+        raise TwelveDataRateLimitError("Twelve Data rate limit reached")
+
+    def _sleep_before_retry(self, response: requests.Response, attempt: int) -> None:
+        retry_after = response.headers.get("Retry-After")
+        try:
+            delay = float(retry_after) if retry_after is not None else None
+        except ValueError:
+            delay = None
+        if delay is None:
+            delay = self.backoff_factor * (2**attempt)
+        time.sleep(max(0.0, delay))
+
+    @staticmethod
+    def _is_rate_limited(payload: dict[str, Any]) -> bool:
+        return payload.get("code") == 429 or payload.get("status") == "429"
 
     @staticmethod
     def _raise_for_provider_error(payload: dict[str, Any]) -> None:
+        if TwelveDataClient._is_rate_limited(payload):
+            raise TwelveDataRateLimitError(
+                str(payload.get("message", "Twelve Data rate limit reached"))
+            )
         if payload.get("status") == "error" or payload.get("code") == 401:
             message = payload.get("message", "Unknown Twelve Data error")
             raise TwelveDataResponseError(str(message))

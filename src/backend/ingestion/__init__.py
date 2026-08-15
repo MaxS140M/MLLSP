@@ -6,6 +6,7 @@ from .client import (
 	TwelveDataClient,
 	TwelveDataError,
 	TwelveDataRequestError,
+	TwelveDataRateLimitError,
 	TwelveDataResponseError,
 )
 from .service import ingest_historical_prices, ingest_live_quote
@@ -16,6 +17,7 @@ __all__ = [
 	"TwelveDataClient",
 	"TwelveDataError",
 	"TwelveDataRequestError",
+	"TwelveDataRateLimitError",
 	"TwelveDataResponseError",
 	"ingest_historical_prices",
 	"ingest_live_quote",
