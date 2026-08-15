@@ -16,7 +16,7 @@ Machine Learning Live Stocks Prediction
 	pip install -r src/backend/requirements.txt
 	```
 
-3. Copy `src/backend/.env.example` to `src/backend/.env` and set `TWELVE_DATA_API_KEY` to your Twelve Data API key. The default database is SQLite at `mllsp.db`; change `DATABASE_URL` if needed.
+3. Copy `src/backend/.env.example` to `src/backend/.env` and set `TWELVE_DATA_API_KEY` to your Twelve Data API key. The default database is SQLite at `mllsp.db`; change `DATABASE_URL` if needed. The ingestion client validates quote and time-series responses and raises clear errors for provider failures or malformed data.
 
 4. Initialize the database tables:
 

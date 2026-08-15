@@ -100,7 +100,7 @@ Shows the latest market information and model results in the browser.
 
 ## 6. Delivery Milestones
 
-### Milestone 1: Set up the project
+### Milestone 1: Set up the project  // completed
 
 - Configure dependencies and environment variables.
 - Set up the database and core tables.

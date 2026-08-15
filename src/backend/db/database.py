@@ -2,12 +2,13 @@
 
 import os
 from collections.abc import Generator
+from pathlib import Path
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./mllsp.db")
 
