@@ -37,6 +37,7 @@ class Quote:
     symbol: str
     price: Decimal
     timestamp: datetime | None
+    name: str | None = None
 
 
 @dataclass(frozen=True)
@@ -89,6 +90,7 @@ class TwelveDataClient:
             symbol=self._required_text(payload, "symbol"),
             price=price,
             timestamp=timestamp,
+            name=self._optional_text(payload, "name"),
         )
 
     def get_time_series(
@@ -194,6 +196,15 @@ class TwelveDataClient:
         if not isinstance(value, str) or not value.strip():
             raise TwelveDataResponseError(f"Twelve Data response is missing {key}")
         return value.strip().upper()
+
+    @staticmethod
+    def _optional_text(payload: dict[str, Any], key: str) -> str | None:
+        value = payload.get(key)
+        if value is None:
+            return None
+        if not isinstance(value, str) or not value.strip():
+            raise TwelveDataResponseError(f"Invalid text field: {key}")
+        return value.strip()
 
     @staticmethod
     def _decimal(payload: dict[str, Any], *keys: str) -> Decimal:

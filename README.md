@@ -18,9 +18,39 @@ Machine Learning Live Stocks Prediction
 - [Milestones](docs/milestones.md)
 - [Milestone 1 test notes](docs/Tests/testM1.md)
 - [Milestone 2 test notes](docs/Tests/testM2.md)
+- [Milestone 3 test notes](docs/Tests/testM3.md)
+- [Milestone 3 analysis notebook](docs/notebooks/MLLSP.ipynb)
+
+## Workflow 
 
 
+Twelve Data API
 
+↓
 
+ingest_historical_prices("MSFT")
 
+↓
+
+mllsp.db
+
+↓
+
+MLLSP.ipynb reads MSFT data
+    
+↓
+
+features are created
+    
+↓
+
+models are trained and evaluated
+    
+↓
+
+model files and metadata are saved
+    
+↓
+
+frontend not added yet.
 
