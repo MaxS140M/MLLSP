@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Environment and local data
+.env
+*.db
+
+# Model artifacts
+src/backend/training/models/*.pkl
+src/backend/training/models/latest.json
