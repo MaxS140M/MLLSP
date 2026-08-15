@@ -12,6 +12,28 @@ load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./mllsp.db")
 
+
+def _resolve_database_url(database_url: str) -> str:
+    """Resolve relative SQLite paths from the repository root."""
+
+    prefix = "sqlite:///"
+    if not database_url.startswith(prefix):
+        return database_url
+
+    database_path = database_url[len(prefix) :]
+    if database_path in {":memory:", ""}:
+        return database_url
+
+    path = Path(database_path)
+    if path.is_absolute():
+        return database_url
+
+    repository_root = Path(__file__).resolve().parents[3]
+    return f"{prefix}{(repository_root / path).as_posix()}"
+
+
+DATABASE_URL = _resolve_database_url(DATABASE_URL)
+
 connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
 engine = create_engine(DATABASE_URL, connect_args=connect_args)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)

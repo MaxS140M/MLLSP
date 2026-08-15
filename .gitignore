@@ -11,4 +11,9 @@ venv/
 
 # Model artifacts
 src/backend/training/models/*.pkl
+src/backend/training/models/*.joblib
+src/backend/training/models/*_metadata.json
 src/backend/training/models/latest.json
+
+# Notebook exports
+docs/notebooks/outputs/

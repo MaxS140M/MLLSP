@@ -18,6 +18,10 @@ Machine Learning Live Stocks Prediction
 - [Milestones](docs/milestones.md)
 - [Milestone 1 test notes](docs/Tests/testM1.md)
 - [Milestone 2 test notes](docs/Tests/testM2.md)
+- [Milestone 3 test notes](docs/Tests/testM3.md)
+- [Milestone 3 analysis notebook](docs/notebooks/MLLSP.ipynb)
+
+After historical data has been imported, Milestone 3 training can be run with `train_symbol`. See the [Milestone 3 test notes](docs/Tests/testM3.md) for the command and results.
 
 
 

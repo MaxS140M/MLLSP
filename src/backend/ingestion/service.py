@@ -74,6 +74,8 @@ def ingest_live_quote(
         symbol_record = Symbol(ticker=ticker)
         db.add(symbol_record)
         db.flush()
+    if quote.name:
+        symbol_record.name = quote.name
 
     observation = db.scalar(
         select(MarketObservation).where(
