@@ -64,6 +64,7 @@ class TwelveDataClient:
         max_retries: int = 2,
         backoff_factor: float = 1.0,
     ) -> None:
+        # Configure the API client and retry policy.
         self.api_key = api_key or os.getenv("TWELVE_DATA_API_KEY")
         if not self.api_key or self.api_key == "your_twelve_data_api_key":
             raise ValueError("TWELVE_DATA_API_KEY must be configured")
@@ -81,6 +82,7 @@ class TwelveDataClient:
     def get_quote(self, symbol: str) -> Quote:
         """Fetch and validate the latest quote for a symbol."""
 
+        # Request the provider's latest quote.
         payload = self._request("/quote", {"symbol": self._validate_symbol(symbol)})
         self._raise_for_provider_error(payload)
 
@@ -98,6 +100,7 @@ class TwelveDataClient:
     ) -> list[PriceBar]:
         """Fetch and validate OHLCV observations for a symbol."""
 
+        # Request historical OHLCV bars within provider limits.
         if outputsize < 1 or outputsize > 5000:
             raise ValueError("outputsize must be between 1 and 5000")
 
@@ -119,6 +122,7 @@ class TwelveDataClient:
         return sorted(bars, key=lambda bar: bar.timestamp)
 
     def _request(self, path: str, params: dict[str, Any]) -> dict[str, Any]:
+        # Retry rate-limited requests before returning an error.
         params["apikey"] = self.api_key
         for attempt in range(self.max_retries + 1):
             try:
@@ -160,6 +164,7 @@ class TwelveDataClient:
         raise TwelveDataRateLimitError("Twelve Data rate limit reached")
 
     def _sleep_before_retry(self, response: requests.Response, attempt: int) -> None:
+        # Prefer the provider's retry delay, then use exponential backoff.
         retry_after = response.headers.get("Retry-After")
         try:
             delay = float(retry_after) if retry_after is not None else None
@@ -219,6 +224,7 @@ class TwelveDataClient:
 
     @classmethod
     def _parse_bar(cls, value: Any) -> PriceBar:
+        # Convert one provider record into a validated price bar.
         if not isinstance(value, dict):
             raise TwelveDataResponseError("Twelve Data observation must be an object")
 

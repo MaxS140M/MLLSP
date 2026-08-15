@@ -20,6 +20,7 @@ from ..ingestion import TwelveDataClient, TwelveDataError, ingest_live_quote
 
 MODEL_DIR = Path(__file__).resolve().parents[1] / "training" / "models"
 
+# Create the API app and allow the local frontend to call it.
 app = FastAPI(title="MLLSP Prediction API", version="0.4.0")
 app.add_middleware(
     CORSMiddleware,
@@ -55,10 +56,16 @@ class PredictionResponse(BaseModel):
     as_of: datetime
 
 
+class HistoryPoint(BaseModel):
+    timestamp: datetime
+    close: Decimal
+
+
 @app.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
     """Confirm that the API process is running."""
 
+    # Return a lightweight server health signal.
     return HealthResponse(status="ok")
 
 
@@ -66,6 +73,7 @@ def health() -> HealthResponse:
 def quote(symbol: str, db: DatabaseSession) -> QuoteResponse:
     """Fetch and persist the latest live quote for a symbol."""
 
+    # Fetch a live quote and return a frontend-friendly response.
     ticker = _normalize_symbol(symbol)
     try:
         live_quote = ingest_live_quote(db, TwelveDataClient(), ticker)
@@ -87,6 +95,7 @@ def quote(symbol: str, db: DatabaseSession) -> QuoteResponse:
 def predict(symbol: str, db: DatabaseSession) -> PredictionResponse:
     """Predict the next closing price using the saved model for a symbol."""
 
+    # Load recent data, features, and the saved model.
     ticker = _normalize_symbol(symbol)
     symbol_record = db.scalar(select(Symbol).where(Symbol.ticker == ticker))
     if symbol_record is None:
@@ -123,6 +132,27 @@ def predict(symbol: str, db: DatabaseSession) -> PredictionResponse:
     )
 
 
+@app.get("/history/{symbol}", response_model=list[HistoryPoint])
+def history(symbol: str, db: DatabaseSession) -> list[HistoryPoint]:
+    """Return stored closing prices for the dashboard chart."""
+
+    # Return stored closes for the frontend chart.
+    ticker = _normalize_symbol(symbol)
+    symbol_record = db.scalar(select(Symbol).where(Symbol.ticker == ticker))
+    if symbol_record is None:
+        raise HTTPException(status_code=404, detail=f"No data found for {ticker}")
+
+    observations = db.scalars(
+        select(MarketObservation)
+        .where(MarketObservation.symbol_id == symbol_record.id)
+        .order_by(MarketObservation.timestamp)
+    ).all()
+    return [
+        HistoryPoint(timestamp=observation.timestamp, close=observation.close)
+        for observation in observations
+    ]
+
+
 def _normalize_symbol(symbol: str) -> str:
     ticker = symbol.strip().upper()
     if not ticker:
@@ -131,6 +161,7 @@ def _normalize_symbol(symbol: str) -> str:
 
 
 def _load_metadata(ticker: str) -> dict[str, object]:
+    # Read the model selection and feature configuration.
     metadata_path = MODEL_DIR / f"{ticker}_metadata.json"
     if not metadata_path.exists():
         raise HTTPException(
@@ -147,6 +178,7 @@ def _load_metadata(ticker: str) -> dict[str, object]:
 
 
 def _load_model(metadata: dict[str, object]) -> object:
+    # Load the serialized estimator selected during training.
     model_file = metadata.get("model_file")
     if not isinstance(model_file, str):
         raise HTTPException(status_code=500, detail="Model filename is missing")

@@ -10,12 +10,14 @@ from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
+# Read the database location from the local environment.
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./mllsp.db")
 
 
 def _resolve_database_url(database_url: str) -> str:
     """Resolve relative SQLite paths from the repository root."""
 
+    # Keep relative SQLite files anchored to the repository.
     prefix = "sqlite:///"
     if not database_url.startswith(prefix):
         return database_url
@@ -34,6 +36,7 @@ def _resolve_database_url(database_url: str) -> str:
 
 DATABASE_URL = _resolve_database_url(DATABASE_URL)
 
+# Configure SQLite for use by the API and notebook.
 connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
 engine = create_engine(DATABASE_URL, connect_args=connect_args)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
@@ -46,6 +49,7 @@ class Base(DeclarativeBase):
 def get_db() -> Generator[Session, None, None]:
     """Provide a database session and close it after use."""
 
+    # Open one session per request or operation.
     db = SessionLocal()
     try:
         yield db
@@ -56,6 +60,7 @@ def get_db() -> Generator[Session, None, None]:
 def init_db() -> None:
     """Create all database tables that do not already exist."""
 
+    # Import models before creating their tables.
     from . import models  # noqa: F401
 
     Base.metadata.create_all(bind=engine)

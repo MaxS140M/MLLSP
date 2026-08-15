@@ -63,3 +63,13 @@ uvicorn src.backend.api.main:app --reload
 ```
 
 Open the interactive API documentation at `http://127.0.0.1:8000/docs`.
+
+## Run the dashboard
+
+Keep the API running, open a second terminal, and serve the static frontend:
+
+```powershell
+python -m http.server 5500 --directory src/Frontend
+```
+
+Open `http://127.0.0.1:5500`. The dashboard loads quotes, predictions, and stored price history from the API.

@@ -12,6 +12,7 @@ from .database import Base
 class Symbol(Base):
     """A supported stock symbol."""
 
+    # Store one row for each supported company.
     __tablename__ = "symbols"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -27,6 +28,7 @@ class Symbol(Base):
 class MarketObservation(Base):
     """OHLCV data point associated with a symbol."""
 
+    # Store timestamped OHLCV market records.
     __tablename__ = "market_observations"
     __table_args__ = (
         UniqueConstraint("symbol_id", "timestamp", name="uq_observation_symbol_time"),

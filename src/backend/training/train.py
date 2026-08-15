@@ -48,6 +48,7 @@ def train_symbol(
     if not ticker:
         raise ValueError("symbol must not be empty")
 
+    # Load one company's observations in chronological order.
     observations = db.scalars(
         select(MarketObservation)
         .join(Symbol)
@@ -64,6 +65,7 @@ def train_symbol(
             f"need {min_samples}, found {len(feature_frame)}"
         )
 
+    # Keep later observations isolated for an honest test.
     split_index = int(len(feature_frame) * (1 - test_size))
     if split_index < 1 or split_index >= len(feature_frame):
         raise ValueError("test_size leaves no training or test samples")
@@ -75,6 +77,7 @@ def train_symbol(
     train_target = train_frame[TARGET_COLUMN]
     test_target = test_frame[TARGET_COLUMN]
 
+    # Compare simple baseline regressors.
     candidates = {
         "linear_regression": Pipeline(
             [("scaler", StandardScaler()), ("model", LinearRegression())]
@@ -84,6 +87,7 @@ def train_symbol(
         ),
         "gradient_boosting": GradientBoostingRegressor(random_state=42),
     }
+    # Fit each candidate and score its test predictions.
     metrics: dict[str, dict[str, float]] = {}
     fitted_models = {}
     for name, model in candidates.items():
@@ -92,6 +96,7 @@ def train_symbol(
         fitted_models[name] = model
         metrics[name] = _metrics(test_target, predictions)
 
+    # Compare against predicting the previous close unchanged.
     naive_predictions = test_frame["close_lag_1"]
     metrics["naive_previous_close"] = _metrics(test_target, naive_predictions)
     best_model = min(
@@ -99,6 +104,7 @@ def train_symbol(
         key=lambda name: (metrics[name]["rmse"], metrics[name]["mae"]),
     )
 
+    # Save the winner and its metadata for the API.
     model_dir.mkdir(parents=True, exist_ok=True)
     model_path = model_dir / f"{ticker}_{best_model}.joblib"
     joblib.dump(fitted_models[best_model], model_path)
